@@ -1,0 +1,47 @@
+<po-page-default p-title="Orion Insight Console">
+  <div class="min-h-screen flex bg-slate-950 text-slate-100">
+    <!-- Sidebar -->
+    <aside class="w-64 border-r border-slate-800 bg-slate-900/90 p-4 flex flex-col gap-4">
+      <div class="text-xs uppercase tracking-widest text-slate-400">
+        Navigation
+      </div>
+
+      <nav class="flex flex-col gap-2 text-sm">
+        <button class="rounded-lg px-3 py-2 text-left hover:bg-slate-800/80">
+          Dashboard
+        </button>
+        <button class="rounded-lg px-3 py-2 text-left hover:bg-slate-800/80">
+          Near Earth Objects
+        </button>
+      </nav>
+    </aside>
+
+    <!-- Conteúdo -->
+    <main class="flex-1 p-8">
+      <h1 class="text-3xl font-semibold mb-4">
+        Overview
+      </h1>
+
+      <p class="text-sm text-slate-300 mb-6">
+        Aqui vamos mostrar os KPIs de asteroides, objetos próximos da Terra e outros dados da API.
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+          <p class="text-xs uppercase text-slate-400">Objetos hoje</p>
+          <p class="mt-2 text-2xl font-bold text-sky-400">–</p>
+        </div>
+
+        <div class="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+          <p class="text-xs uppercase text-slate-400">Mais próximo da Terra</p>
+          <p class="mt-2 text-2xl font-bold text-emerald-400">–</p>
+        </div>
+
+        <div class="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+          <p class="text-xs uppercase text-slate-400">Risco potencial</p>
+          <p class="mt-2 text-2xl font-bold text-rose-400">–</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</po-page-default>
