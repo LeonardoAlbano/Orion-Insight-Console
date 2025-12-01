@@ -1,0 +1,96 @@
+<section class="space-y-6">
+  <ng-container *ngIf="apod$ | async as apod">
+    <div *ngIf="apod" class="rounded-2xl border border-slate-800 bg-slate-900/80 overflow-hidden">
+      <div class="flex flex-col md:flex-row">
+        <div class="relative aspect-video bg-black md:w-2/3">
+          <img
+            *ngIf="apod.media_type === 'image'"
+            [src]="apod.url"
+            [alt]="apod.title"
+            class="h-full w-full object-cover"
+          />
+
+          <div
+            *ngIf="apod.media_type === 'video'"
+            class="flex h-full w-full items-center justify-center text-xs text-slate-300 px-4 text-center"
+          >
+            NASA APOD é um vídeo hoje. Abra diretamente no site da NASA:
+            <br />
+            <a
+              [href]="apod.url"
+              target="_blank"
+              rel="noreferrer"
+              class="text-sky-400 underline"
+            >
+              Ver vídeo
+            </a>
+          </div>
+
+          <span
+            class="absolute left-3 top-3 rounded-full bg-black/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-200"
+          >
+            NASA APOD — {{ apod.date }}
+          </span>
+        </div>
+
+        <div class="space-y-2 p-4 md:w-1/3 md:p-6">
+          <h1 class="text-xl font-semibold md:text-2xl">
+            {{ apod.title }}
+          </h1>
+          <p class="text-xs uppercase text-slate-400">
+            Astronomy Picture of the Day
+          </p>
+          <p class="text-sm text-slate-300 max-h-40 overflow-y-auto">
+            {{ apod.explanation }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <header>
+    <h2 class="text-2xl font-semibold tracking-tight md:text-3xl">
+      Near-Earth Objects Overview
+    </h2>
+    <p class="mt-1 text-sm text-slate-300">
+      Painel inicial com métricas dos asteroides próximos da Terra e imagem do dia da NASA.
+    </p>
+  </header>
+
+  <ng-container *ngIf="neoSummary$ | async as neo">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <!-- Objetos hoje -->
+      <div class="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+        <p class="text-xs uppercase text-slate-400">
+          Objetos hoje
+        </p>
+        <p class="mt-2 text-3xl font-semibold text-sky-400">
+          {{ neo.total }}
+        </p>
+      </div>
+
+      <!-- Mais próximo da Terra -->
+      <div class="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+        <p class="text-xs uppercase text-slate-400">
+          Mais próximo da Terra
+        </p>
+        <p class="mt-2 text-2xl font-semibold text-emerald-400">
+          <ng-container *ngIf="neo.closestKm !== null; else noData">
+            {{ neo.closestKm | number : '1.0-0' }} km
+          </ng-container>
+          <ng-template #noData> – </ng-template>
+        </p>
+      </div>
+
+      <!-- Potencialmente perigosos -->
+      <div class="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+        <p class="text-xs uppercase text-slate-400">
+          Potencialmente perigosos
+        </p>
+        <p class="mt-2 text-3xl font-semibold text-rose-400">
+          {{ neo.hazardous }}
+        </p>
+      </div>
+    </div>
+  </ng-container>
+</section>

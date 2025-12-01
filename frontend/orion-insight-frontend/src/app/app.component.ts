@@ -1,13 +1,11 @@
 import { Component } from '@angular/core';
-import { PoModule } from '@po-ui/ng-components';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [PoModule],
+  imports: [RouterOutlet],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent {
-  title = 'orion-insight-frontend';
-}
+export class AppComponent {}

@@ -1,0 +1,33 @@
+<po-page-default p-title="Orion Insight Console">
+  <div class="min-h-screen flex flex-col bg-slate-950 text-slate-100 md:flex-row">
+    <aside
+      class="w-full border-b border-slate-800 bg-slate-900/95 px-4 py-3 flex items-center justify-between md:w-64 md:flex-col md:items-start md:justify-start md:border-b-0 md:border-r"
+    >
+      <div class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 mb-0 md:mb-4">
+        Navigation
+      </div>
+
+      <nav class="flex gap-2 text-sm md:flex-col md:gap-2 w-full">
+        <a
+          routerLink="/dashboard"
+          routerLinkActive="bg-slate-800 text-sky-300"
+          class="flex-1 rounded-lg px-3 py-2 text-center transition hover:bg-slate-800/80 hover:text-sky-200 md:text-left"
+        >
+          Dashboard
+        </a>
+
+        <a
+          routerLink="/objects"
+          routerLinkActive="bg-slate-800 text-sky-300"
+          class="flex-1 rounded-lg px-3 py-2 text-center transition hover:bg-slate-800/80 hover:text-sky-200 md:text-left"
+        >
+          Near Earth Objects
+        </a>
+      </nav>
+    </aside>
+
+    <main class="flex-1 p-4 md:p-8">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</po-page-default>

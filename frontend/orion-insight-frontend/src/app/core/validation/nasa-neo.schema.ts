@@ -27,10 +27,9 @@ export const nasaNeoFeedSchema = z.object({
   element_count: z.number(),
   near_earth_objects: z.record(
     z.string(),
-    z.array(nasaNeoObjectSchema)
+    z.array(nasaNeoObjectSchema),
   ),
 });
 
 export type NasaNeoFeed = z.infer<typeof nasaNeoFeedSchema>;
 export type NasaNeoObject = z.infer<typeof nasaNeoObjectSchema>;
-
