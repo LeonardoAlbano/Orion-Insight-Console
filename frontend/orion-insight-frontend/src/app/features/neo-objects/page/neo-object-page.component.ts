@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, AsyncPipe } from '@angular/common';
 import {
   PoTableModule,
   PoTableColumn,
@@ -7,14 +7,17 @@ import {
 } from '@po-ui/ng-components';
 import {
   BehaviorSubject,
-  catchError,
+  Observable,
   combineLatest,
+  catchError,
   map,
   of,
 } from 'rxjs';
 
 import { NasaNeoService } from '../../../core/services/nasa-neo.service';
 import type { NasaNeoObject } from '../../../core/validation/nasa-neo.schema';
+
+type RiskFilter = 'all' | 'dangerous' | 'safe';
 
 type NeoTableItem = {
   name: string;
@@ -27,30 +30,60 @@ type NeoTableItem = {
 @Component({
   selector: 'app-neo-objects-page',
   standalone: true,
-  imports: [CommonModule, PoTableModule, PoLoadingModule],
+  imports: [CommonModule, AsyncPipe, PoTableModule, PoLoadingModule],
   templateUrl: './neo-object-page.component.html',
   styleUrls: ['./neo-object-page.component.scss'],
 })
 export class NeoObjectsPageComponent {
   private readonly neoService = inject(NasaNeoService);
+  private readonly riskFilter$ = new BehaviorSubject<RiskFilter>('all');
   private readonly searchTerm$ = new BehaviorSubject<string>('');
-  private readonly riskFilter$ =
-    new BehaviorSubject<'all' | 'dangerous' | 'safe'>('all');
 
-  // Colunas da tabela do PO-UI
+  readonly neoItems$: Observable<NeoTableItem[]> =
+    this.neoService.getTodayObjects().pipe(
+      map((objects) => this.mapToTableItems(objects)),
+      catchError((err) => {
+        console.error('Erro ao carregar Near Earth Objects', err);
+        return of<NeoTableItem[]>([]);
+      }),
+    );
+
+  readonly filteredItems$: Observable<NeoTableItem[]> = combineLatest([
+    this.neoItems$,
+    this.riskFilter$,
+    this.searchTerm$,
+  ]).pipe(
+    map(([items, riskFilter, searchTerm]) => {
+      const term = searchTerm.trim().toLowerCase();
+
+      return items.filter((item) => {
+        if (riskFilter !== 'all' && item.risk !== riskFilter) {
+          return false;
+        }
+
+        if (!term) return true;
+
+        const dateStr = item.approachDate ?? '';
+        return (
+          item.name.toLowerCase().includes(term) ||
+          dateStr.toLowerCase().includes(term)
+        );
+      });
+    }),
+  );
+
+  // colunas da tabela
   readonly columns: PoTableColumn[] = [
     {
       property: 'name',
       label: 'Objeto',
       width: '20%',
-      sortable: true,
     },
     {
       property: 'approachDate',
       label: 'Data de aproximação',
       type: 'date',
       width: '18%',
-      sortable: true,
     },
     {
       property: 'missDistanceKm',
@@ -58,7 +91,6 @@ export class NeoObjectsPageComponent {
       type: 'number',
       format: '1.0-0',
       width: '20%',
-      sortable: true,
     },
     {
       property: 'velocityKmS',
@@ -66,7 +98,6 @@ export class NeoObjectsPageComponent {
       type: 'number',
       format: '1.1-1',
       width: '20%',
-      sortable: true,
     },
     {
       property: 'risk',
@@ -78,55 +109,26 @@ export class NeoObjectsPageComponent {
           value: 'dangerous',
           label: 'Perigoso',
           content: 'PER',
-          color: 'color-07', 
+          color: 'color-07',
         },
         {
           value: 'safe',
           label: 'Normal',
           content: 'NOR',
-          color: 'color-11',
+          color: 'color-11', 
         },
       ],
     },
   ];
 
-  private readonly neoItems$ = this.neoService.getTodayObjects().pipe(
-    map((objects) => this.mapToTableItems(objects)),
-    catchError((err) => {
-      console.error('Erro ao carregar Near Earth Objects', err);
-      return of<NeoTableItem[]>([]);
-    }),
-  );
-
-  readonly filteredItems$ = combineLatest([
-    this.neoItems$,
-    this.searchTerm$,
-    this.riskFilter$,
-  ]).pipe(
-    map(([items, searchTerm, riskFilter]) => {
-      const term = searchTerm.trim().toLowerCase();
-
-      return items.filter((item) => {
-        const matchesRisk =
-          riskFilter === 'all' ? true : item.risk === riskFilter;
-
-        const matchesSearch =
-          !term ||
-          item.name.toLowerCase().includes(term) ||
-          item.approachDate.includes(term);
-
-        return matchesRisk && matchesSearch;
-      });
-    }),
-  );
+  onRiskFilterChange(value: string) {
+    const v: RiskFilter =
+      value === 'dangerous' || value === 'safe' ? value : 'all';
+    this.riskFilter$.next(v);
+  }
 
   onSearchChange(value: string) {
     this.searchTerm$.next(value);
-  }
-
-  onRiskFilterChange(value: string) {
-    const cast = value as 'all' | 'dangerous' | 'safe';
-    this.riskFilter$.next(cast);
   }
 
   private mapToTableItems(objects: NasaNeoObject[]): NeoTableItem[] {
