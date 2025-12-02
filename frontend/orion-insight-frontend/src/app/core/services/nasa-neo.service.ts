@@ -31,6 +31,15 @@ export class NasaNeoService {
       .get<unknown>(`${this.baseUrl}/feed`, { params })
       .pipe(map((response) => nasaNeoFeedSchema.parse(response) as NasaNeoFeed));
   }
+  
+  getTodayObjects() {
+    return this.getTodayFeed().pipe(
+      map((feed) => {
+        const today = this.getTodayDate();
+        return feed.near_earth_objects[today] ?? [];
+      }),
+    );
+  }
 
   getTodaySummary() {
     return this.getTodayFeed().pipe(

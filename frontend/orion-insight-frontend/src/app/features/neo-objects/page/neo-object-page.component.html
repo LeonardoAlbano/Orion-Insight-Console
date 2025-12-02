@@ -1,0 +1,28 @@
+<div class="p-4 md:p-6 lg:p-8 space-y-6">
+
+  <header class="space-y-1">
+    <h1 class="text-xl md:text-2xl font-semibold text-slate-50">
+      Near Earth Objects
+    </h1>
+    <p class="text-xs md:text-sm text-slate-400 max-w-2xl">
+      Lista de asteroides próximos da Terra para a data de hoje,
+      com base na NASA Near Earth Object Web Service (NeoWs).
+    </p>
+  </header>
+
+  <div
+    class="max-w-full overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/70"
+  >
+    <po-table
+      class="min-w-full"
+      [p-items]="(neoItems$ | async) || []"
+      [p-columns]="columns"
+      [p-striped]="true"
+      [p-hide-detail]="true">
+    </po-table>
+  </div>
+
+  <p class="text-[11px] text-slate-500">
+    Fonte: NASA Near Earth Object Web Service (NeoWs).
+  </p>
+</div>

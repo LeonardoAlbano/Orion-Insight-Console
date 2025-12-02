@@ -1,22 +1,16 @@
 import { Routes } from '@angular/router';
 import { MainLayoutComponent } from './core/layout/main-layout/main-layout.component';
+import { DashboardPageComponent } from './features/dashboard/pages/dashboard-page/dashboard-page.component';
+import { NeoObjectsPageComponent } from './features/neo-objects/page/neo-object-page.component';
 
 export const routes: Routes = [
   {
     path: '',
     component: MainLayoutComponent,
     children: [
-      {
-        path: '',
-        pathMatch: 'full',
-        redirectTo: 'dashboard',
-      },
-      {
-        path: 'dashboard',
-        loadComponent: () =>
-          import('./features/dashboard/pages/dashboard-page/dashboard-page.component')
-            .then(m => m.DashboardPageComponent),
-      },
+      { path: 'dashboard', component: DashboardPageComponent },
+      { path: 'near-earth-objects', component: NeoObjectsPageComponent },
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
     ],
   },
 ];
