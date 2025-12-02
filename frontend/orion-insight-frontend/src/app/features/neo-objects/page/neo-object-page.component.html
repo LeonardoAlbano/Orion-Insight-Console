@@ -1,6 +1,5 @@
 <div class="flex flex-col gap-6">
-  <!-- Cabeçalho da página -->
-  <header class="mb-4">
+  <header class="mb-2">
     <h1 class="text-xl font-semibold text-slate-100 md:text-2xl">
       Near Earth Objects
     </h1>
@@ -9,11 +8,37 @@
       NASA Near Earth Object Web Service (NeoWs).
     </p>
   </header>
+  <div
+    class="mb-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+  >
+    <div class="flex items-center gap-2">
+      <span class="text-xs uppercase text-slate-400">Risco</span>
+        <select
+          #riskSelect
+          class="rounded-md border border-slate-800 bg-slate-900 px-2 py-1 text-xs text-slate-100"
+          (change)="onRiskFilterChange(riskSelect.value)"
+        >
 
-  <!-- Conteúdo principal: tabela + estados -->
+        <option value="all">Todos</option>
+        <option value="dangerous">Perigosos</option>
+        <option value="safe">Normais</option>
+      </select>
+    </div>
+
+    <div class="relative md:w-72">
+      <input
+        #searchInput
+        type="text"
+        placeholder="Buscar por nome ou data (AAAA-MM-DD)..."
+        class="w-full rounded-md border border-slate-800 bg-slate-900/80 px-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-500"
+        (input)="onSearchChange(searchInput.value)"
+      />
+
+    </div>
+  </div>
+
   <section>
-    <ng-container *ngIf="neoItems$ | async as items; else loading">
-      <!-- Tem dados -->
+    <ng-container *ngIf="filteredItems$ | async as items; else loading">
       <ng-container *ngIf="items.length > 0; else empty">
         <po-table
           [p-columns]="columns"
@@ -22,17 +47,15 @@
         ></po-table>
       </ng-container>
 
-      <!-- Estado "sem dados" -->
       <ng-template #empty>
         <div
           class="rounded-lg border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-300"
         >
-          Nenhum objeto encontrado para hoje.
+          Nenhum objeto encontrado para os critérios atuais.
         </div>
       </ng-template>
     </ng-container>
 
-    <!-- Estado de loading inicial -->
     <ng-template #loading>
       <div
         class="flex items-center justify-center rounded-lg border border-slate-800 bg-slate-900/60 py-10"

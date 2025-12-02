@@ -1,16 +1,21 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule, AsyncPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import {
   PoTableModule,
   PoTableColumn,
   PoLoadingModule,
 } from '@po-ui/ng-components';
-import { catchError, map, of } from 'rxjs';
+import {
+  BehaviorSubject,
+  catchError,
+  combineLatest,
+  map,
+  of,
+} from 'rxjs';
 
 import { NasaNeoService } from '../../../core/services/nasa-neo.service';
 import type { NasaNeoObject } from '../../../core/validation/nasa-neo.schema';
 
-// Modelo que a tabela usa
 type NeoTableItem = {
   name: string;
   approachDate: string;
@@ -22,24 +27,30 @@ type NeoTableItem = {
 @Component({
   selector: 'app-neo-objects-page',
   standalone: true,
-  imports: [CommonModule, AsyncPipe, PoTableModule, PoLoadingModule],
+  imports: [CommonModule, PoTableModule, PoLoadingModule],
   templateUrl: './neo-object-page.component.html',
   styleUrls: ['./neo-object-page.component.scss'],
 })
 export class NeoObjectsPageComponent {
   private readonly neoService = inject(NasaNeoService);
+  private readonly searchTerm$ = new BehaviorSubject<string>('');
+  private readonly riskFilter$ =
+    new BehaviorSubject<'all' | 'dangerous' | 'safe'>('all');
 
+  // Colunas da tabela do PO-UI
   readonly columns: PoTableColumn[] = [
     {
       property: 'name',
       label: 'Objeto',
       width: '20%',
+      sortable: true,
     },
     {
       property: 'approachDate',
       label: 'Data de aproximação',
       type: 'date',
       width: '18%',
+      sortable: true,
     },
     {
       property: 'missDistanceKm',
@@ -47,6 +58,7 @@ export class NeoObjectsPageComponent {
       type: 'number',
       format: '1.0-0',
       width: '20%',
+      sortable: true,
     },
     {
       property: 'velocityKmS',
@@ -54,6 +66,7 @@ export class NeoObjectsPageComponent {
       type: 'number',
       format: '1.1-1',
       width: '20%',
+      sortable: true,
     },
     {
       property: 'risk',
@@ -65,7 +78,7 @@ export class NeoObjectsPageComponent {
           value: 'dangerous',
           label: 'Perigoso',
           content: 'PER',
-          color: 'color-07',
+          color: 'color-07', 
         },
         {
           value: 'safe',
@@ -77,13 +90,44 @@ export class NeoObjectsPageComponent {
     },
   ];
 
-  readonly neoItems$ = this.neoService.getTodayObjects().pipe(
+  private readonly neoItems$ = this.neoService.getTodayObjects().pipe(
     map((objects) => this.mapToTableItems(objects)),
     catchError((err) => {
       console.error('Erro ao carregar Near Earth Objects', err);
       return of<NeoTableItem[]>([]);
     }),
   );
+
+  readonly filteredItems$ = combineLatest([
+    this.neoItems$,
+    this.searchTerm$,
+    this.riskFilter$,
+  ]).pipe(
+    map(([items, searchTerm, riskFilter]) => {
+      const term = searchTerm.trim().toLowerCase();
+
+      return items.filter((item) => {
+        const matchesRisk =
+          riskFilter === 'all' ? true : item.risk === riskFilter;
+
+        const matchesSearch =
+          !term ||
+          item.name.toLowerCase().includes(term) ||
+          item.approachDate.includes(term);
+
+        return matchesRisk && matchesSearch;
+      });
+    }),
+  );
+
+  onSearchChange(value: string) {
+    this.searchTerm$.next(value);
+  }
+
+  onRiskFilterChange(value: string) {
+    const cast = value as 'all' | 'dangerous' | 'safe';
+    this.riskFilter$.next(cast);
+  }
 
   private mapToTableItems(objects: NasaNeoObject[]): NeoTableItem[] {
     return objects.map((neo) => {
