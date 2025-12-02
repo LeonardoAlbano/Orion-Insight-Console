@@ -1,3 +1,4 @@
-:host {
-  display: block;
+:host ::ng-deep .po-table .po-tag {
+  font-size: 0.7rem;
+  padding-inline: .5rem;
 }

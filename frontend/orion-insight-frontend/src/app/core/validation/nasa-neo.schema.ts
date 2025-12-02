@@ -33,3 +33,11 @@ export const nasaNeoFeedSchema = z.object({
 
 export type NasaNeoFeed = z.infer<typeof nasaNeoFeedSchema>;
 export type NasaNeoObject = z.infer<typeof nasaNeoObjectSchema>;
+
+export type NeoTodaySummary = {
+  total: number;
+  hazardous: number;
+  closestKm: number | null;
+  hazardousPercent: number;
+  riskLevel: 'low' | 'moderate' | 'high';
+};

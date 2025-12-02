@@ -1,10 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { map } from 'rxjs';
+import { map, Observable } from 'rxjs';
+
 import {
   nasaNeoFeedSchema,
   type NasaNeoFeed,
   type NasaNeoObject,
+  type NeoTodaySummary,
 } from '../validation/nasa-neo.schema';
 import { NASA_API_KEY } from '../config/nasa.config';
 
@@ -31,7 +33,7 @@ export class NasaNeoService {
       .get<unknown>(`${this.baseUrl}/feed`, { params })
       .pipe(map((response) => nasaNeoFeedSchema.parse(response) as NasaNeoFeed));
   }
-  
+
   getTodayObjects() {
     return this.getTodayFeed().pipe(
       map((feed) => {
@@ -41,9 +43,9 @@ export class NasaNeoService {
     );
   }
 
-  getTodaySummary() {
+  getTodaySummary(): Observable<NeoTodaySummary> {
     return this.getTodayFeed().pipe(
-      map((feed) => {
+      map((feed): NeoTodaySummary => {
         const today = this.getTodayDate();
         const objectsToday = feed.near_earth_objects[today] ?? [];
 
@@ -54,7 +56,26 @@ export class NasaNeoService {
 
         const closestKm = this.getClosestDistanceKm(objectsToday);
 
-        return { total, hazardous, closestKm };
+        const hazardousPercent =
+          total > 0 ? Math.round((hazardous / total) * 100) : 0;
+
+        let riskLevel: 'low' | 'moderate' | 'high' = 'low';
+
+        if (hazardous === 0) {
+          riskLevel = 'low';
+        } else if (hazardous <= 2 && (closestKm ?? Infinity) > 500_000) {
+          riskLevel = 'moderate';
+        } else {
+          riskLevel = 'high';
+        }
+
+        return {
+          total,
+          hazardous,
+          closestKm,
+          hazardousPercent,
+          riskLevel,
+        };
       }),
     );
   }

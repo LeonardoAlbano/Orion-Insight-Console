@@ -3,12 +3,14 @@ import { CommonModule, AsyncPipe } from '@angular/common';
 import {
   PoTableModule,
   PoTableColumn,
+  PoLoadingModule,
 } from '@po-ui/ng-components';
 import { catchError, map, of } from 'rxjs';
 
 import { NasaNeoService } from '../../../core/services/nasa-neo.service';
-import { NasaNeoObject } from '../../../core/validation/nasa-neo.schema';
+import type { NasaNeoObject } from '../../../core/validation/nasa-neo.schema';
 
+// Modelo que a tabela usa
 type NeoTableItem = {
   name: string;
   approachDate: string;
@@ -20,7 +22,7 @@ type NeoTableItem = {
 @Component({
   selector: 'app-neo-objects-page',
   standalone: true,
-  imports: [CommonModule, AsyncPipe, PoTableModule],
+  imports: [CommonModule, AsyncPipe, PoTableModule, PoLoadingModule],
   templateUrl: './neo-object-page.component.html',
   styleUrls: ['./neo-object-page.component.scss'],
 })
@@ -62,27 +64,21 @@ export class NeoObjectsPageComponent {
         {
           value: 'dangerous',
           label: 'Perigoso',
-          content: 'Perigoso',
-          color: 'color-07', // vermelho
+          content: 'PER',
+          color: 'color-07',
         },
         {
           value: 'safe',
           label: 'Normal',
-          content: 'Normal',
-          color: 'color-11', // verde
+          content: 'NOR',
+          color: 'color-11',
         },
       ],
     },
   ];
 
-  /**
-   * Fluxo principal:
-   * 1) pega objetos de hoje no service
-   * 2) mapeia para o formato NeoTableItem
-   * 3) em caso de erro, devolve [] para não quebrar UI
-   */
   readonly neoItems$ = this.neoService.getTodayObjects().pipe(
-    map((objects: NasaNeoObject[]) => this.mapToTableItems(objects)),
+    map((objects) => this.mapToTableItems(objects)),
     catchError((err) => {
       console.error('Erro ao carregar Near Earth Objects', err);
       return of<NeoTableItem[]>([]);

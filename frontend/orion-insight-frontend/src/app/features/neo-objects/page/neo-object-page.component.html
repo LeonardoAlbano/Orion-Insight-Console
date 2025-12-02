@@ -1,28 +1,46 @@
-<div class="p-4 md:p-6 lg:p-8 space-y-6">
-
-  <header class="space-y-1">
-    <h1 class="text-xl md:text-2xl font-semibold text-slate-50">
+<div class="flex flex-col gap-6">
+  <!-- Cabeçalho da página -->
+  <header class="mb-4">
+    <h1 class="text-xl font-semibold text-slate-100 md:text-2xl">
       Near Earth Objects
     </h1>
-    <p class="text-xs md:text-sm text-slate-400 max-w-2xl">
-      Lista de asteroides próximos da Terra para a data de hoje,
-      com base na NASA Near Earth Object Web Service (NeoWs).
+    <p class="mt-1 text-sm text-slate-400">
+      Lista de asteroides próximos da Terra para a data de hoje, com base na
+      NASA Near Earth Object Web Service (NeoWs).
     </p>
   </header>
 
-  <div
-    class="max-w-full overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/70"
-  >
-    <po-table
-      class="min-w-full"
-      [p-items]="(neoItems$ | async) || []"
-      [p-columns]="columns"
-      [p-striped]="true"
-      [p-hide-detail]="true">
-    </po-table>
-  </div>
+  <!-- Conteúdo principal: tabela + estados -->
+  <section>
+    <ng-container *ngIf="neoItems$ | async as items; else loading">
+      <!-- Tem dados -->
+      <ng-container *ngIf="items.length > 0; else empty">
+        <po-table
+          [p-columns]="columns"
+          [p-items]="items"
+          p-striped="true"
+        ></po-table>
+      </ng-container>
 
-  <p class="text-[11px] text-slate-500">
-    Fonte: NASA Near Earth Object Web Service (NeoWs).
-  </p>
+      <!-- Estado "sem dados" -->
+      <ng-template #empty>
+        <div
+          class="rounded-lg border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-300"
+        >
+          Nenhum objeto encontrado para hoje.
+        </div>
+      </ng-template>
+    </ng-container>
+
+    <!-- Estado de loading inicial -->
+    <ng-template #loading>
+      <div
+        class="flex items-center justify-center rounded-lg border border-slate-800 bg-slate-900/60 py-10"
+      >
+        <po-loading
+          p-text="Carregando Near Earth Objects..."
+        ></po-loading>
+      </div>
+    </ng-template>
+  </section>
 </div>
