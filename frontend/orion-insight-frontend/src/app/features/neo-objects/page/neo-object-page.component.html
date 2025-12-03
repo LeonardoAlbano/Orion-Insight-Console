@@ -49,27 +49,78 @@
         (input)="onSearchChange(searchInput.value)"
       />
     </div>
-    <div class="flex justify-end md:hidden">
-      <button
-        type="button"
-        class="inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-100 hover:bg-slate-800"
-        (click)="openColumnModal()"
-      >
-        <span class="po-icon po-icon-settings text-sm"></span>
-        Colunas
-      </button>
-    </div>
   </div>
 
   <section>
-    <ng-container *ngIf="filteredItems$ | async as items; else loading">
-      <ng-container *ngIf="items.length > 0; else empty">
+    <ng-container *ngIf="viewModel$ | async as vm; else loading">
+      <ng-container *ngIf="vm.items.length > 0; else empty">
         <po-table
           [p-columns]="columns"
-          [p-items]="items"
+          [p-items]="vm.items"
           p-striped="true"
           [p-hide-columns-manager]="true"
         ></po-table>
+        <div
+          class="mt-3 flex flex-col items-center justify-between gap-3 text-xs text-slate-400 md:flex-row"
+        >
+          <div class="order-2 md:order-1">
+            Mostrando
+            <span class="text-slate-100">
+              {{ (vm.page - 1) * vm.pageSize + 1 }}
+            </span>
+            –
+            <span class="text-slate-100">
+              {{
+                (vm.page - 1) * vm.pageSize + vm.items.length
+              }}
+            </span>
+            de
+            <span class="text-slate-100">
+              {{ vm.total }}
+            </span>
+            registros
+          </div>
+
+          <div
+            class="order-1 flex items-center gap-2 md:order-2"
+          >
+            <button
+              type="button"
+              class="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-100 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+              (click)="goToPrevPage()"
+              [disabled]="!vm.canPrev"
+            >
+              ← Anterior
+            </button>
+
+            <span>
+              Página
+              <span class="text-slate-100">{{ vm.page }}</span>
+              de
+              <span class="text-slate-100">{{ vm.totalPages }}</span>
+            </span>
+
+            <button
+              type="button"
+              class="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-100 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+              (click)="goToNextPage(vm.totalPages)"
+              [disabled]="!vm.canNext"
+            >
+              Próxima →
+            </button>
+
+            <select
+              #pageSizeSelect
+              class="rounded-md border border-slate-800 bg-slate-900/80 px-2 py-1 text-xs text-slate-100"
+              (change)="onPageSizeChange(pageSizeSelect.value)"
+            >
+              <option value="10">10 / página</option>
+              <option value="15" selected>15 / página</option>
+              <option value="25">25 / página</option>
+              <option value="50">50 / página</option>
+            </select>
+          </div>
+        </div>
       </ng-container>
 
       <ng-template #empty>

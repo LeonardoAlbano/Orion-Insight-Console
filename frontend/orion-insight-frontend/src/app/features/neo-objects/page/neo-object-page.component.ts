@@ -30,6 +30,16 @@ type NeoTableItem = {
 type RiskFilter = 'all' | 'dangerous' | 'safe';
 type DaysFilter = 1 | 3 | 7;
 
+type TableViewModel = {
+  items: NeoTableItem[];
+  total: number;
+  page: number;
+  totalPages: number;
+  pageSize: number;
+  canPrev: boolean;
+  canNext: boolean;
+};
+
 @Component({
   selector: 'app-neo-objects-page',
   standalone: true,
@@ -48,6 +58,11 @@ export class NeoObjectsPageComponent {
   private readonly riskFilter$ = this.riskFilterSubject.asObservable();
   private readonly searchFilter$ = this.searchFilterSubject.asObservable();
 
+  private readonly pageSubject = new BehaviorSubject<number>(1);
+  private readonly pageSizeSubject = new BehaviorSubject<number>(15);
+
+  private readonly page$ = this.pageSubject.asObservable();
+  private readonly pageSize$ = this.pageSizeSubject.asObservable();
 
   private readonly baseItems$: Observable<NeoTableItem[]> = this.daysFilter$.pipe(
     switchMap((days) => this.loadRange(days)),
@@ -57,6 +72,7 @@ export class NeoObjectsPageComponent {
   private loadRange(days: DaysFilter): Observable<NeoTableItem[]> {
     const end = new Date();
     const start = new Date();
+
     start.setDate(end.getDate() - (days - 1));
 
     const startStr = this.toDateInputValue(start);
@@ -75,7 +91,7 @@ export class NeoObjectsPageComponent {
     return date.toISOString().slice(0, 10);
   }
 
-  readonly filteredItems$ = combineLatest([
+  private readonly filteredItems$ = combineLatest([
     this.baseItems$,
     this.riskFilter$,
     this.searchFilter$,
@@ -101,19 +117,73 @@ export class NeoObjectsPageComponent {
     }),
   );
 
+  readonly viewModel$ = combineLatest([
+    this.filteredItems$,
+    this.page$,
+    this.pageSize$,
+  ]).pipe(
+    map(([items, page, pageSize]) => {
+      const total = items.length;
+      const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+      const safePage = Math.min(Math.max(page, 1), totalPages);
+
+      const startIndex = (safePage - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const pageItems = items.slice(startIndex, endIndex);
+
+      const vm: TableViewModel = {
+        items: pageItems,
+        total,
+        page: safePage,
+        totalPages,
+        pageSize,
+        canPrev: safePage > 1,
+        canNext: safePage < totalPages,
+      };
+
+      return vm;
+    }),
+  );
+
   onRiskFilterChange(value: RiskFilter): void {
     this.riskFilterSubject.next(value);
+    this.pageSubject.next(1);
   }
 
   onSearchChange(value: string): void {
     this.searchFilterSubject.next(value);
+    this.pageSubject.next(1);
   }
 
   onDaysFilterChange(value: string): void {
     const days = Number(value) as DaysFilter;
     if (days === 1 || days === 3 || days === 7) {
       this.daysFilterSubject.next(days);
+      this.pageSubject.next(1);
     }
+  }
+
+  goToPrevPage(): void {
+    const current = this.pageSubject.value;
+    if (current > 1) {
+      this.pageSubject.next(current - 1);
+    }
+  }
+
+  goToNextPage(totalPages: number): void {
+    const current = this.pageSubject.value;
+    if (current < totalPages) {
+      this.pageSubject.next(current + 1);
+    }
+  }
+
+  onPageSizeChange(value: string): void {
+    const size = Number(value);
+    if (!Number.isFinite(size) || size <= 0) return;
+
+    this.pageSizeSubject.next(size);
+    this.pageSubject.next(1);
   }
 
   private readonly defaultColumns: PoTableColumn[] = [
@@ -165,7 +235,6 @@ export class NeoObjectsPageComponent {
   ];
 
   columns: PoTableColumn[] = [...this.defaultColumns];
-
   allColumns: PoTableColumn[] = [...this.defaultColumns];
 
   isColumnModalOpen = false;
@@ -191,7 +260,6 @@ export class NeoObjectsPageComponent {
     if (!prop) return;
 
     if (checked) {
-
       if (!this.columns.some((c) => c.property === prop)) {
         const ordered: PoTableColumn[] = [];
         for (const baseCol of this.defaultColumns) {
@@ -232,6 +300,7 @@ export class NeoObjectsPageComponent {
     this.columns = [...this.defaultColumns];
     this.allColumns = [...this.defaultColumns];
   }
+
   private mapToTableItems(objects: NasaNeoObject[]): NeoTableItem[] {
     return objects.map((neo) => {
       const firstApproach = neo.close_approach_data[0];
