@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
+import { map } from 'rxjs';
 
 import {
   nasaNeoFeedSchema,
   type NasaNeoFeed,
   type NasaNeoObject,
-  type NeoTodaySummary,
+  type NeoTodaySummary,   
 } from '../validation/nasa-neo.schema';
 import { NASA_API_KEY } from '../config/nasa.config';
 
@@ -20,12 +20,10 @@ export class NasaNeoService {
     return new Date().toISOString().slice(0, 10);
   }
 
-  getTodayFeed() {
-    const today = this.getTodayDate();
-
+  private getFeed(startDate: string, endDate: string) {
     const params = {
-      start_date: today,
-      end_date: today,
+      start_date: startDate,
+      end_date: endDate,
       api_key: NASA_API_KEY,
     };
 
@@ -34,19 +32,44 @@ export class NasaNeoService {
       .pipe(map((response) => nasaNeoFeedSchema.parse(response) as NasaNeoFeed));
   }
 
+  getTodayFeed() {
+    const today = this.getTodayDate();
+    return this.getFeed(today, today);
+  }
+
+  getFeedRange(startDate: string, endDate: string) {
+    return this.getFeed(startDate, endDate);
+  }
+
   getTodayObjects() {
+    const today = this.getTodayDate();
+
     return this.getTodayFeed().pipe(
+      map((feed) => feed.near_earth_objects[today] ?? []),
+    );
+  }
+
+  getObjectsRange(startDate: string, endDate: string) {
+    return this.getFeedRange(startDate, endDate).pipe(
       map((feed) => {
-        const today = this.getTodayDate();
-        return feed.near_earth_objects[today] ?? [];
+        const result: NasaNeoObject[] = [];
+        const days = Object.keys(feed.near_earth_objects).sort();
+
+        for (const day of days) {
+          const list = feed.near_earth_objects[day] ?? [];
+          result.push(...list);
+        }
+
+        return result;
       }),
     );
   }
 
-  getTodaySummary(): Observable<NeoTodaySummary> {
+getTodaySummary() {
+    const today = this.getTodayDate();
+
     return this.getTodayFeed().pipe(
       map((feed): NeoTodaySummary => {
-        const today = this.getTodayDate();
         const objectsToday = feed.near_earth_objects[today] ?? [];
 
         const total = objectsToday.length;
@@ -59,11 +82,10 @@ export class NasaNeoService {
         const hazardousPercent =
           total > 0 ? Math.round((hazardous / total) * 100) : 0;
 
-        let riskLevel: 'low' | 'moderate' | 'high' = 'low';
-
+        let riskLevel: NeoTodaySummary['riskLevel'];
         if (hazardous === 0) {
           riskLevel = 'low';
-        } else if (hazardous <= 2 && (closestKm ?? Infinity) > 500_000) {
+        } else if (hazardousPercent <= 30) {
           riskLevel = 'moderate';
         } else {
           riskLevel = 'high';

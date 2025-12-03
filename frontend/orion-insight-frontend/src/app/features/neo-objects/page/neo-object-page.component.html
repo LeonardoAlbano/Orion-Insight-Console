@@ -12,19 +12,33 @@
   <div
     class="mb-2 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
   >
-    <div class="flex items-center gap-2">
-      <span class="text-xs uppercase text-slate-400">Risco</span>
-      <select
-        #riskSelect
-        class="rounded-md border border-slate-800 bg-slate-900/80 px-2 py-1 text-xs text-slate-100"
-        (change)="onRiskFilterChange(riskSelect.value)"
-      >
-        <option value="all">Todos</option>
-        <option value="dangerous">Perigosos</option>
-        <option value="safe">Normais</option>
-      </select>
-    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      <div class="flex items-center gap-2">
+        <span class="text-xs uppercase text-slate-400">Período</span>
+        <select
+          #daysSelect
+          class="rounded-md border border-slate-800 bg-slate-900/80 px-2 py-1 text-xs text-slate-100"
+          (change)="onDaysFilterChange(daysSelect.value)"
+        >
+          <option value="1">Hoje</option>
+          <option value="3">Últimos 3 dias</option>
+          <option value="7">Últimos 7 dias</option>
+        </select>
+      </div>
 
+      <div class="flex items-center gap-2">
+        <span class="text-xs uppercase text-slate-400">Risco</span>
+        <select
+          #riskSelect
+          class="rounded-md border border-slate-800 bg-slate-900/80 px-2 py-1 text-xs text-slate-100"
+          (change)="onRiskFilterChange($any(riskSelect.value))"
+        >
+          <option value="all">Todos</option>
+          <option value="dangerous">Perigosos</option>
+          <option value="safe">Normais</option>
+        </select>
+      </div>
+    </div>
 
     <div class="relative md:w-72">
       <input
@@ -35,6 +49,16 @@
         (input)="onSearchChange(searchInput.value)"
       />
     </div>
+    <div class="flex justify-end md:hidden">
+      <button
+        type="button"
+        class="inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-100 hover:bg-slate-800"
+        (click)="openColumnModal()"
+      >
+        <span class="po-icon po-icon-settings text-sm"></span>
+        Colunas
+      </button>
+    </div>
   </div>
 
   <section>
@@ -44,6 +68,7 @@
           [p-columns]="columns"
           [p-items]="items"
           p-striped="true"
+          [p-hide-columns-manager]="true"
         ></po-table>
       </ng-container>
 
