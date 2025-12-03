@@ -6,9 +6,14 @@ import {
   nasaNeoFeedSchema,
   type NasaNeoFeed,
   type NasaNeoObject,
-  type NeoTodaySummary,   
 } from '../validation/nasa-neo.schema';
 import { NASA_API_KEY } from '../config/nasa.config';
+
+export type NeoDailyStat = {
+  date: string;
+  total: number;
+  hazardous: number;
+};
 
 @Injectable({ providedIn: 'root' })
 export class NasaNeoService {
@@ -16,8 +21,12 @@ export class NasaNeoService {
 
   constructor(private http: HttpClient) {}
 
+  private formatDate(date: Date): string {
+    return date.toISOString().slice(0, 10);
+  }
+
   private getTodayDate(): string {
-    return new Date().toISOString().slice(0, 10);
+    return this.formatDate(new Date());
   }
 
   private getFeed(startDate: string, endDate: string) {
@@ -65,41 +74,55 @@ export class NasaNeoService {
     );
   }
 
-getTodaySummary() {
+  getTodaySummary() {
     const today = this.getTodayDate();
 
     return this.getTodayFeed().pipe(
-      map((feed): NeoTodaySummary => {
+      map((feed) => {
         const objectsToday = feed.near_earth_objects[today] ?? [];
-
         const total = objectsToday.length;
         const hazardous = objectsToday.filter(
           (neo) => neo.is_potentially_hazardous_asteroid,
         ).length;
-
         const closestKm = this.getClosestDistanceKm(objectsToday);
 
-        const hazardousPercent =
-          total > 0 ? Math.round((hazardous / total) * 100) : 0;
-
-        let riskLevel: NeoTodaySummary['riskLevel'];
-        if (hazardous === 0) {
-          riskLevel = 'low';
-        } else if (hazardousPercent <= 30) {
-          riskLevel = 'moderate';
-        } else {
-          riskLevel = 'high';
-        }
-
-        return {
-          total,
-          hazardous,
-          closestKm,
-          hazardousPercent,
-          riskLevel,
-        };
+        return { total, hazardous, closestKm };
       }),
     );
+  }
+
+  getDailyStatsRange(startDate: string, endDate: string) {
+    return this.getFeedRange(startDate, endDate).pipe(
+      map((feed) => {
+        const result: NeoDailyStat[] = [];
+        const days = Object.keys(feed.near_earth_objects).sort();
+
+        for (const day of days) {
+          const list = feed.near_earth_objects[day] ?? [];
+          const total = list.length;
+          const hazardous = list.filter(
+            (neo) => neo.is_potentially_hazardous_asteroid,
+          ).length;
+
+          result.push({ date: day, total, hazardous });
+        }
+
+        return result;
+      }),
+    );
+  }
+
+  getDailyStatsLastNDays(days: number) {
+    const safeDays = Math.min(Math.max(days, 1), 7);
+
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - (safeDays - 1));
+
+    const startStr = this.formatDate(start);
+    const endStr = this.formatDate(end);
+
+    return this.getDailyStatsRange(startStr, endStr);
   }
 
   private getClosestDistanceKm(objects: NasaNeoObject[]): number | null {
