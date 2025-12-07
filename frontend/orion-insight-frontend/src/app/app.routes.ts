@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { MainLayoutComponent } from './core/layout/main-layout/main-layout.component';
-import { DashboardPageComponent } from './features/dashboard/pages/dashboard-page/dashboard-page.component';
-import { NeoObjectsPageComponent } from './features/neo-objects/page/neo-object-page.component';
+import { DashboardPageComponent } from './features/dashboard/pages/dashboard-page.component';
+import { NeoObjectsPageComponent } from './features/neo-objects/pages/neo-object-page.component';
 
 export const routes: Routes = [
   {

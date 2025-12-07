@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { RouterTestingModule } from '@angular/router/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { MainLayoutComponent } from './main-layout.component';
 
@@ -8,9 +10,12 @@ describe('MainLayoutComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MainLayoutComponent]
-    })
-    .compileComponents();
+      imports: [
+        MainLayoutComponent,
+        RouterTestingModule,   
+        HttpClientTestingModule,  
+      ],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(MainLayoutComponent);
     component = fixture.componentInstance;

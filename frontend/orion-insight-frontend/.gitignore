@@ -43,4 +43,5 @@ Thumbs.db
 
 
 # environment local com key real da NASA
-frontend/orion-insight-frontend/src/environments/environment.ts
+src/environment/environment.ts
+

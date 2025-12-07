@@ -6,26 +6,24 @@ import {
   PoChartSerie,
 } from '@po-ui/ng-components';
 import {
+  Observable,
   catchError,
   map,
   of,
   shareReplay,
-  Observable,
 } from 'rxjs';
 
-import { NasaApodService } from '../../../../core/services/nasa-apod.service';
-import { NasaNeoService } from '../../../../core/services/nasa-neo.service';
-import type { NeoTodaySummary } from '../../../../core/validation/nasa-neo.schema';
+import { NasaApodService } from '../../../core/services/nasa-apod.service';
+import {
+  NasaNeoService,
+  NeoDailyStat,
+} from '../../../core/services/nasa-neo.service';
+import type { NeoTodaySummary } from '../../../core/validation/nasa-neo.schema';
+import type { NasaApod } from '../../../core/validation/nasa-apod.schema';
 
 type DashboardNeoSummary = NeoTodaySummary & {
   hazardousPercent: number;
   riskLevel: 'low' | 'moderate' | 'high';
-};
-
-type NeoDailyStat = {
-  date: string;
-  total: number;
-  hazardous: number;
 };
 
 type ChartViewModel = {
@@ -51,14 +49,15 @@ export class DashboardPageComponent {
   readonly lineChartType: PoChartType = PoChartType.Line;
   readonly donutChartType: PoChartType = PoChartType.Donut;
 
-  apod$: Observable<any> = this.apodService.getToday().pipe(
+  readonly apod$: Observable<NasaApod | null> = this.apodService.getToday().pipe(
     catchError((err) => {
       console.error('Erro ao buscar APOD', err);
       return of(null);
     }),
+    shareReplay(1),
   );
 
-  neoSummary$: Observable<DashboardNeoSummary> =
+  readonly neoSummary$: Observable<DashboardNeoSummary> =
     this.neoService.getTodaySummary().pipe(
       map((summary): DashboardNeoSummary => {
         const total = summary.total ?? 0;
@@ -67,11 +66,13 @@ export class DashboardPageComponent {
         const hazardousPercent =
           total > 0 ? Math.round((hazardous / total) * 100) : 0;
 
-        let riskLevel: DashboardNeoSummary['riskLevel'] = 'low';
+        let riskLevel: DashboardNeoSummary['riskLevel'];
 
-        if (hazardousPercent >= 40) {
+        if (total === 0 || hazardous === 0) {
+          riskLevel = 'low';
+        } else if (hazardousPercent >= 40) {
           riskLevel = 'high';
-        } else if (hazardousPercent >= 15) {
+        } else {
           riskLevel = 'moderate';
         }
 
@@ -99,17 +100,13 @@ export class DashboardPageComponent {
 
   readonly dailyChartVm$: Observable<ChartViewModel> =
     this.neoService.getDailyStatsLastNDays(7).pipe(
-      catchError((err) => {
-        console.error('Erro ao buscar stats diários NeoWs', err);
-        return of<NeoDailyStat[]>([]);
-      }),
       map((stats: NeoDailyStat[]): ChartViewModel => {
         const categories = stats.map((s) => s.date);
         const totals = stats.map((s) => s.total);
         const hazardous = stats.map((s) => s.hazardous);
 
-        const totalHazardous = hazardous.reduce((sum, v) => sum + v, 0);
         const total = totals.reduce((sum, v) => sum + v, 0);
+        const totalHazardous = hazardous.reduce((sum, v) => sum + v, 0);
         const totalSafe = Math.max(total - totalHazardous, 0);
 
         const lineSeries: PoChartSerie[] = [
