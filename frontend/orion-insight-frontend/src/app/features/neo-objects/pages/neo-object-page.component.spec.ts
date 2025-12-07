@@ -3,33 +3,36 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { of } from 'rxjs';
 
 import { NeoObjectsPageComponent } from './neo-object-page.component';
-import { NasaNeoService } from '../../../core/services/nasa-neo.service';
-import type { NasaNeoObject } from '../../../core/validation/nasa-neo.schema';
+import {
+  NeoObjectsFacade,
+  TableViewModel,
+} from '../neo.objects.facade';
 
-class NasaNeoServiceMock {
-  getObjectsRange(startDate: string, endDate: string) {
-    const mockObjects: NasaNeoObject[] = [
+class NeoObjectsFacadeMock {
+  viewModel$ = of<TableViewModel>({
+    items: [
       {
-        id: '1',
         name: 'Asteroid 1',
-        absolute_magnitude_h: 0,
-        estimated_diameter: {} as any,
-        is_potentially_hazardous_asteroid: true,
-        close_approach_data: [
-          {
-            close_approach_date: '2025-12-07',
-            miss_distance: { kilometers: '50000' } as any,
-            relative_velocity: { kilometers_per_second: '25' } as any,
-          } as any,
-        ],
-        is_sentry_object: false,
-        nasa_jpl_url: '',
-        neo_reference_id: '',
-      } as any,
-    ];
+        approachDate: '2025-12-07',
+        missDistanceKm: 50000,
+        velocityKmS: 25,
+        risk: 'dangerous',
+      },
+    ],
+    total: 1,
+    page: 1,
+    totalPages: 1,
+    pageSize: 15,
+    canPrev: false,
+    canNext: false,
+  });
 
-    return of(mockObjects);
-  }
+  setRiskFilter(_: any): void {}
+  setSearch(_: any): void {}
+  setDaysFilter(_: any): void {}
+  setPageSize(_: any): void {}
+  goToPrevPage(): void {}
+  goToNextPage(_: any): void {}
 }
 
 describe('NeoObjectsPageComponent', () => {
@@ -38,8 +41,13 @@ describe('NeoObjectsPageComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [NeoObjectsPageComponent, HttpClientTestingModule],
-      providers: [{ provide: NasaNeoService, useClass: NasaNeoServiceMock }],
+      imports: [
+        NeoObjectsPageComponent,
+        HttpClientTestingModule,
+      ],
+      providers: [
+        { provide: NeoObjectsFacade, useClass: NeoObjectsFacadeMock },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(NeoObjectsPageComponent);

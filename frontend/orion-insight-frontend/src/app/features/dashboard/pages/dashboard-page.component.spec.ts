@@ -1,29 +1,32 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-
-import { DashboardPageComponent } from './dashboard-page.component';
-import { NasaApodService } from '../../../core/services/nasa-apod.service';
-import { NasaNeoService } from '../../../core/services/nasa-neo.service';
 import { of } from 'rxjs';
 
-class NasaApodServiceMock {
-  getToday() {
-    return of(null);
-  }
-}
+import { DashboardPageComponent } from './dashboard-page.component';
+import {
+  DashboardObjectsFacade,
+  DashboardNeoSummary,
+  ChartViewModel,
+} from '../dashboard.objects.facade';
 
-class NasaNeoServiceMock {
-  getTodaySummary() {
-    return of({
-      total: 0,
-      hazardous: 0,
-      closestKm: null,
-    });
-  }
+class DashboardObjectsFacadeMock {
+  apod$ = of(null);
 
-  getDailyStatsLastNDays() {
-    return of([]);
-  }
+  neoSummary$ = of<DashboardNeoSummary>({
+    total: 0,
+    hazardous: 0,
+    closestKm: null,
+    hazardousPercent: 0,
+    riskLevel: 'low',
+  });
+
+  dailyChartVm$ = of<ChartViewModel>({
+    categories: [],
+    lineSeries: [],
+    donutSeries: [],
+    total: 0,
+    totalHazardous: 0,
+    totalSafe: 0,
+  });
 }
 
 describe('DashboardPageComponent', () => {
@@ -32,16 +35,15 @@ describe('DashboardPageComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [DashboardPageComponent, HttpClientTestingModule],
+      imports: [DashboardPageComponent],
       providers: [
-        { provide: NasaApodService, useClass: NasaApodServiceMock },
-        { provide: NasaNeoService, useClass: NasaNeoServiceMock },
+        { provide: DashboardObjectsFacade, useClass: DashboardObjectsFacadeMock },
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(DashboardPageComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+      fixture = TestBed.createComponent(DashboardPageComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
   });
 
   it('should create', () => {

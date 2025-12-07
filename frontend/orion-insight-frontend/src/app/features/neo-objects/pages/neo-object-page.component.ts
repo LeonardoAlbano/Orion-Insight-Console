@@ -5,40 +5,12 @@ import {
   PoTableColumn,
   PoTableModule,
 } from '@po-ui/ng-components';
+
 import {
-  BehaviorSubject,
-  catchError,
-  combineLatest,
-  map,
-  Observable,
-  of,
-  shareReplay,
-  switchMap,
-} from 'rxjs';
-
-import { NasaNeoService } from '../../../core/services/nasa-neo.service';
-import type { NasaNeoObject } from '../../../core/validation/nasa-neo.schema';
-
-type NeoTableItem = {
-  name: string;
-  approachDate: string;
-  missDistanceKm: number | null;
-  velocityKmS: number | null;
-  risk: 'dangerous' | 'safe';
-};
-
-type RiskFilter = 'all' | 'dangerous' | 'safe';
-type DaysFilter = 1 | 3 | 7;
-
-type TableViewModel = {
-  items: NeoTableItem[];
-  total: number;
-  page: number;
-  totalPages: number;
-  pageSize: number;
-  canPrev: boolean;
-  canNext: boolean;
-};
+  NeoObjectsFacade,
+  RiskFilter,
+  DaysFilter,
+} from '../neo.objects.facade';
 
 @Component({
   selector: 'app-neo-objects-page',
@@ -48,143 +20,12 @@ type TableViewModel = {
   styleUrls: ['./neo-object-page.component.scss'],
 })
 export class NeoObjectsPageComponent {
-  private readonly neoService = inject(NasaNeoService);
+  private readonly facade = inject(NeoObjectsFacade);
 
-  private readonly daysFilterSubject = new BehaviorSubject<DaysFilter>(1);
-  private readonly riskFilterSubject = new BehaviorSubject<RiskFilter>('all');
-  private readonly searchFilterSubject = new BehaviorSubject<string>('');
+  // View model vindo do facade (já paginado/filtrado)
+  readonly viewModel$ = this.facade.viewModel$;
 
-  private readonly daysFilter$ = this.daysFilterSubject.asObservable();
-  private readonly riskFilter$ = this.riskFilterSubject.asObservable();
-  private readonly searchFilter$ = this.searchFilterSubject.asObservable();
-
-  private readonly pageSubject = new BehaviorSubject<number>(1);
-  private readonly pageSizeSubject = new BehaviorSubject<number>(15);
-
-  private readonly page$ = this.pageSubject.asObservable();
-  private readonly pageSize$ = this.pageSizeSubject.asObservable();
-
-  private readonly baseItems$: Observable<NeoTableItem[]> = this.daysFilter$.pipe(
-    switchMap((days) => this.loadRange(days)),
-    shareReplay(1),
-  );
-
-  private loadRange(days: DaysFilter): Observable<NeoTableItem[]> {
-    const end = new Date();
-    const start = new Date();
-
-    start.setDate(end.getDate() - (days - 1));
-
-    const startStr = this.toDateInputValue(start);
-    const endStr = this.toDateInputValue(end);
-
-    return this.neoService.getObjectsRange(startStr, endStr).pipe(
-      map((objects) => this.mapToTableItems(objects)),
-      catchError((err) => {
-        console.error('Erro ao carregar Near Earth Objects', err);
-        return of<NeoTableItem[]>([]);
-      }),
-    );
-  }
-
-  private toDateInputValue(date: Date): string {
-    return date.toISOString().slice(0, 10);
-  }
-
-  private readonly filteredItems$ = combineLatest([
-    this.baseItems$,
-    this.riskFilter$,
-    this.searchFilter$,
-  ]).pipe(
-    map(([items, risk, search]) => {
-      let result = items;
-      if (risk === 'dangerous') {
-        result = result.filter((item) => item.risk === 'dangerous');
-      } else if (risk === 'safe') {
-        result = result.filter((item) => item.risk === 'safe');
-      }
-
-      const term = search.trim().toLowerCase();
-      if (term) {
-        result = result.filter((item) => {
-          const name = item.name.toLowerCase();
-          const date = item.approachDate.toLowerCase();
-          return name.includes(term) || date.includes(term);
-        });
-      }
-
-      return result;
-    }),
-  );
-
-  readonly viewModel$ = combineLatest([
-    this.filteredItems$,
-    this.page$,
-    this.pageSize$,
-  ]).pipe(
-    map(([items, page, pageSize]) => {
-      const total = items.length;
-      const totalPages = Math.max(1, Math.ceil(total / pageSize));
-
-      const safePage = Math.min(Math.max(page, 1), totalPages);
-
-      const startIndex = (safePage - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      const pageItems = items.slice(startIndex, endIndex);
-
-      const vm: TableViewModel = {
-        items: pageItems,
-        total,
-        page: safePage,
-        totalPages,
-        pageSize,
-        canPrev: safePage > 1,
-        canNext: safePage < totalPages,
-      };
-
-      return vm;
-    }),
-  );
-
-  onRiskFilterChange(value: RiskFilter): void {
-    this.riskFilterSubject.next(value);
-    this.pageSubject.next(1);
-  }
-
-  onSearchChange(value: string): void {
-    this.searchFilterSubject.next(value);
-    this.pageSubject.next(1);
-  }
-
-  onDaysFilterChange(value: string): void {
-    const days = Number(value) as DaysFilter;
-    if (days === 1 || days === 3 || days === 7) {
-      this.daysFilterSubject.next(days);
-      this.pageSubject.next(1);
-    }
-  }
-
-  goToPrevPage(): void {
-    const current = this.pageSubject.value;
-    if (current > 1) {
-      this.pageSubject.next(current - 1);
-    }
-  }
-
-  goToNextPage(totalPages: number): void {
-    const current = this.pageSubject.value;
-    if (current < totalPages) {
-      this.pageSubject.next(current + 1);
-    }
-  }
-
-  onPageSizeChange(value: string): void {
-    const size = Number(value);
-    if (!Number.isFinite(size) || size <= 0) return;
-
-    this.pageSizeSubject.next(size);
-    this.pageSubject.next(1);
-  }
+  // ---------- Config da tabela ----------
 
   private readonly defaultColumns: PoTableColumn[] = [
     {
@@ -237,7 +78,40 @@ export class NeoObjectsPageComponent {
   columns: PoTableColumn[] = [...this.defaultColumns];
   allColumns: PoTableColumn[] = [...this.defaultColumns];
 
+  // Controle do modal de colunas
   isColumnModalOpen = false;
+
+  // ---------- Handlers que delegam para o facade ----------
+
+  onRiskFilterChange(value: RiskFilter): void {
+    this.facade.setRiskFilter(value);
+  }
+
+  onSearchChange(value: string): void {
+    this.facade.setSearch(value);
+  }
+
+  onDaysFilterChange(value: string): void {
+    const days = Number(value) as DaysFilter;
+    if (days === 1 || days === 3 || days === 7) {
+      this.facade.setDaysFilter(days);
+    }
+  }
+
+  onPageSizeChange(value: string): void {
+    const size = Number(value);
+    this.facade.setPageSize(size);
+  }
+
+  goToPrevPage(): void {
+    this.facade.goToPrevPage();
+  }
+
+  goToNextPage(totalPages: number): void {
+    this.facade.goToNextPage(totalPages);
+  }
+
+  // ---------- Lógica de UI (colunas) fica no componente ----------
 
   openColumnModal(): void {
     this.isColumnModalOpen = true;
@@ -266,9 +140,11 @@ export class NeoObjectsPageComponent {
           const already = this.columns.find(
             (c) => c.property === baseCol.property,
           );
+
           if (baseCol.property === prop) {
             ordered.push(baseCol);
           }
+
           if (already && !ordered.includes(already)) {
             ordered.push(already);
           }
@@ -299,27 +175,5 @@ export class NeoObjectsPageComponent {
   restoreDefaultColumns(): void {
     this.columns = [...this.defaultColumns];
     this.allColumns = [...this.defaultColumns];
-  }
-
-  private mapToTableItems(objects: NasaNeoObject[]): NeoTableItem[] {
-    return objects.map((neo) => {
-      const firstApproach = neo.close_approach_data[0];
-
-      const missKm = firstApproach
-        ? parseFloat(firstApproach.miss_distance.kilometers)
-        : NaN;
-
-      const velKmS = firstApproach
-        ? parseFloat(firstApproach.relative_velocity.kilometers_per_second)
-        : NaN;
-
-      return {
-        name: neo.name,
-        approachDate: firstApproach?.close_approach_date ?? '',
-        missDistanceKm: Number.isFinite(missKm) ? missKm : null,
-        velocityKmS: Number.isFinite(velKmS) ? velKmS : null,
-        risk: neo.is_potentially_hazardous_asteroid ? 'dangerous' : 'safe',
-      };
-    });
   }
 }
