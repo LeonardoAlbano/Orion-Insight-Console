@@ -21,11 +21,7 @@ import {
 })
 export class NeoObjectsPageComponent {
   private readonly facade = inject(NeoObjectsFacade);
-
-  // View model vindo do facade (já paginado/filtrado)
   readonly viewModel$ = this.facade.viewModel$;
-
-  // ---------- Config da tabela ----------
 
   private readonly defaultColumns: PoTableColumn[] = [
     {
@@ -77,11 +73,8 @@ export class NeoObjectsPageComponent {
 
   columns: PoTableColumn[] = [...this.defaultColumns];
   allColumns: PoTableColumn[] = [...this.defaultColumns];
-
-  // Controle do modal de colunas
   isColumnModalOpen = false;
 
-  // ---------- Handlers que delegam para o facade ----------
 
   onRiskFilterChange(value: RiskFilter): void {
     this.facade.setRiskFilter(value);
@@ -110,8 +103,6 @@ export class NeoObjectsPageComponent {
   goToNextPage(totalPages: number): void {
     this.facade.goToNextPage(totalPages);
   }
-
-  // ---------- Lógica de UI (colunas) fica no componente ----------
 
   openColumnModal(): void {
     this.isColumnModalOpen = true;

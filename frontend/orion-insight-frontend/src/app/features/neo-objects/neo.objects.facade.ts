@@ -113,8 +113,6 @@ export class NeoObjectsFacade {
     }),
   );
 
-  // --------- Ações chamadas pelo componente ---------
-
   setRiskFilter(value: RiskFilter): void {
     this.riskFilterSubject.next(value);
     this.pageSubject.next(1);
