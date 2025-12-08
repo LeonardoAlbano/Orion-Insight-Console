@@ -13,6 +13,7 @@ import { PoModule } from '@po-ui/ng-components';
 
 export class MainLayoutComponent {
   mobileMenuOpen = false;
+  readonly currentYear = new Date().getFullYear();
 
   toggleMobileMenu() {
     this.mobileMenuOpen = !this.mobileMenuOpen;

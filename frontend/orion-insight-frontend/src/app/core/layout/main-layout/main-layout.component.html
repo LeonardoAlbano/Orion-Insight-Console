@@ -29,17 +29,17 @@
       <nav class="hidden items-center gap-4 text-sm font-medium md:flex">
         <a
           routerLink="/dashboard"
-          routerLinkActive="text-sky-300"
+          routerLinkActive="text-sky-900 border-sky-400"
           [routerLinkActiveOptions]="{ exact: true }"
-          class="rounded-md px-2 py-1 text-slate-300 hover:text-sky-200"
+          class="pb-1 border-b-2 border-transparent text-slate-400 hover:text-slate-100 transition-colors"
         >
           Dashboard
         </a>
 
         <a
           routerLink="/near-earth-objects"
-          routerLinkActive="text-sky-300"
-          class="rounded-md px-2 py-1 text-slate-300 hover:text-sky-200"
+          routerLinkActive="text-sky-900 border-sky-400"
+          class="pb-1 border-b-2 border-transparent text-slate-400 hover:text-slate-100 transition-colors"
         >
           Near Earth Objects
         </a>
@@ -120,8 +120,28 @@
   </header>
 
   <main class="pt-20 sm:pt-24">
-    <div class="mx-auto max-w-7xl px-4 pb-8 pt-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-7xl px-4 pb-12 pt-4 sm:px-6 lg:px-8">
       <router-outlet></router-outlet>
     </div>
   </main>
+
+ <footer class="border-t border-slate-800/70">
+    <div
+      class="mx-auto max-w-6xl px-4 py-8 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-2"
+    >
+      <span>© {{ currentYear }} Orion Insight</span>
+
+      <span class="flex gap-3 items-center">
+        <span>Dados fornecidos pela</span>
+        <a
+          href="https://api.nasa.gov/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-sky-400 hover:text-sky-300"
+        >
+          NASA Open APIs
+        </a>
+      </span>
+    </div>
+  </footer>
 </div>
